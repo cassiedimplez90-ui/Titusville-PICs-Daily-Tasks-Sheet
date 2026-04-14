@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Weekly Team Task Sheet</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f6f9;padding:1rem;color:#111}
+h1{font-size:18px;font-weight:600;margin-bottom:1.25rem;color:#1a1a2e}
+.nav-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding:0.75rem 1rem;background:#fff;border:1px solid #e0e0e0;border-radius:12px}
+.nav-btn{background:transparent;border:1px solid #ccc;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px;color:#333;transition:background 0.15s}
+.nav-btn:hover{background:#f0f0f0}
+.week-label{font-size:14px;font-weight:600;color:#1a1a2e;text-align:center}
+.week-sub{font-size:12px;color:#777;text-align:center;margin-top:2px}
+.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:700px){.cols{grid-template-columns:1fr}}
+.col-card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden}
+.col-header{padding:12px 14px;border-bottom:1px solid #e0e0e0}
+.col-header.teal{background:#E1F5EE}
+.col-header.purple{background:#EEEDFE}
+.col-header.amber{background:#FAEEDA}
+.col-name{font-size:15px;font-weight:600}
+.teal .col-name{color:#085041}
+.purple .col-name{color:#3C3489}
+.amber .col-name{color:#633806}
+.col-count{font-size:12px;margin-top:2px}
+.teal .col-count{color:#0F6E56}
+.purple .col-count{color:#534AB7}
+.amber .col-count{color:#854F0B}
+.progress-bar{height:4px;background:#e8e8e8}
+.progress-fill{height:4px;transition:width 0.3s}
+.teal-fill{background:#1D9E75}
+.purple-fill{background:#7F77DD}
+.amber-fill{background:#BA7517}
+.tasks-list{padding:10px 8px}
+.task-item{display:flex;align-items:flex-start;gap:8px;padding:7px 6px;border-radius:8px;cursor:pointer;transition:background 0.1s}
+.task-item:hover{background:#f8f8f8}
+.task-item input[type=checkbox]{margin-top:2px;flex-shrink:0;cursor:pointer;width:14px;height:14px}
+.teal-accent input{accent-color:#1D9E75}
+.purple-accent input{accent-color:#534AB7}
+.amber-accent input{accent-color:#BA7517}
+.task-label{font-size:12.5px;color:#111;line-height:1.5;font-weight:500}
+.task-label.done{color:#aaa;text-decoration:line-through}
+.task-note{display:block;font-size:11px;color:#888;font-weight:400;margin-top:1px}
+.task-note.done{color:#bbb}
+.badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:99px;margin-left:5px;vertical-align:middle;white-space:nowrap;font-weight:500}
+.badge-daily{background:#FAC775;color:#633806}
+.badge-admits{background:#9FE1CB;color:#085041}
+.saving{font-size:11px;color:#999;text-align:center;padding:4px 0;min-height:18px}
+</style>
+</head>
+<body>
+<h1>Weekly Team Task Sheet</h1>
+<div class="nav-bar">
+  <button class="nav-btn" onclick="changeWeek(-1)">← Prev Week</button>
+  <div>
+    <div class="week-label" id="week-label"></div>
+    <div class="week-sub" id="week-sub"></div>
+  </div>
+  <button class="nav-btn" onclick="changeWeek(1)">Next Week →</button>
+</div>
+<div id="saving-msg" class="saving"></div>
+<div class="cols" id="cols"></div>
+
+<script>
+const PEOPLE=["Jaden","Dominique","I\u2019ketta"];
+const STYLES=["teal","purple","amber"];
+const ACCENT=["teal-accent","purple-accent","amber-accent"];
+const FILLS=["teal-fill","purple-fill","amber-fill"];
+
+const TASK_GROUPS=[
+  [
+    {label:"Create the Daily Hospitalist List"},
+    {label:"Send Daily Census & List Emails"},
+    {label:"Set Up ED Admissions TigerText Group"},
+    {label:"Verify Day Admissions, Bring on Service & Enter Demographics",admits:true},
+    {label:"File Previous Day\u2019s Discharges"},
+    {label:"Complete PET Calls",note:"Currently not completing PET visits \u2014 document accordingly"},
+    {label:"Generate Rounding Lists for Day & Night"},
+    {label:"Check Mail Room \u2014 Scan & Email Insurance Letters to MEDUSA"}
+  ],
+  [
+    {label:"File CQIs"},
+    {label:"Enter Missing Event Information",note:"Located under Scrubber Failure / Event Information"},
+    {label:"Complete CQIs"},
+    {label:"File Missing Face Sheets",note:"Located under Required Documents"},
+    {label:"File Clinical Pathways"},
+    {label:"Verify & Update Patient Room Numbers"},
+    {label:"File Missing Documentation",note:"Located under Document Transmission"},
+    {label:"Verify Night Admissions, Bring on Service & Enter Demographics",admits:true},
+    {label:"Complete and Send Reports Email"}
+  ],
+  [
+    {label:"Answer ED Phone Calls for Admissions"},
+    {label:"Complete Scrubbers on Smartsheet",daily:true},
+    {label:"Complete PIC Requests on Smartsheet",daily:true},
+    {label:"Enter Outside Physician Information",note:"Contact the physician\u2019s practice directly to obtain this information"},
+    {label:"Review Managed Schedules & Apply Any Necessary Updates",daily:true},
+    {label:"Confirm All Audit Documents Are Filed",note:"If a document is unavailable, contact the provider directly",daily:true},
+    {label:"Enter Missing PCPs",note:"Reference Medi-Tech or contact the patient for updated information"},
+    {label:"Bring ICU Downgrades on Service & Enter Demographics",admits:true},
+    {label:"Review & Reply to Team Emails"}
+  ]
+];
+
+function getWeekKey(offset){
+  const base=new Date(2026,3,13);
+  const d=new Date(base.getTime()+offset*7*86400000);
+  const jan1=new Date(d.getFullYear(),0,1);
+  const wk=Math.ceil(((d-jan1)/86400000+jan1.getDay()+1)/7);
+  return d.getFullYear()+"-W"+String(wk).padStart(2,"0");
+}
+
+function getWeekDates(offset){
+  const base=new Date(2026,3,13);
+  const mon=new Date(base.getTime()+offset*7*86400000);
+  const sun=new Date(mon.getTime()+6*86400000);
+  const fmt=d=>d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+  return fmt(mon)+" \u2013 "+fmt(sun);
+}
+
+const PREFIX="team_tasks_";
+let currentOffset=0;
+let checked={};
+let saveTimeout=null;
+
+function loadChecked(){
+  const key=PREFIX+getWeekKey(currentOffset);
+  try{const r=localStorage.getItem(key);checked=r?JSON.parse(r):{};}
+  catch(e){checked={};}
+}
+
+function saveChecked(){
+  const key=PREFIX+getWeekKey(currentOffset);
+  try{
+    localStorage.setItem(key,JSON.stringify(checked));
+    const msg=document.getElementById("saving-msg");
+    msg.textContent="Progress saved.";
+    setTimeout(()=>{if(msg)msg.textContent=""},1500);
+  }catch(e){}
+}
+
+function getRotation(offset){return((offset%3)+3)%3;}
+
+function buildCols(){
+  const rot=getRotation(currentOffset);
+  const cols=document.getElementById("cols");
+  cols.innerHTML="";
+  PEOPLE.forEach((person,pi)=>{
+    const groupIdx=(pi-rot+3)%3;
+    const tasks=TASK_GROUPS[groupIdx];
+    const doneCount=tasks.filter((_,ti)=>checked[pi+"-"+ti]).length;
+
+    const card=document.createElement("div");
+    card.className="col-card";
+
+    const hdr=document.createElement("div");
+    hdr.className="col-header "+STYLES[pi];
+    hdr.innerHTML=`<div class="col-name">${person}</div><div class="col-count">${doneCount} / ${tasks.length} completed</div>`;
+    card.appendChild(hdr);
+
+    const bar=document.createElement("div");
+    bar.className="progress-bar";
+    const fill=document.createElement("div");
+    fill.className="progress-fill "+FILLS[pi];
+    fill.style.width=Math.round(doneCount/tasks.length*100)+"%";
+    bar.appendChild(fill);
+    card.appendChild(bar);
+
+    const list=document.createElement("div");
+    list.className="tasks-list";
+    tasks.forEach((task,ti)=>{
+      const ck=checked[pi+"-"+ti]||false;
+      const item=document.createElement("div");
+      item.className="task-item "+ACCENT[pi];
+      const cb=document.createElement("input");
+      cb.type="checkbox";cb.checked=ck;
+      cb.addEventListener("change",e=>{
+        checked[pi+"-"+ti]=e.target.checked;
+        clearTimeout(saveTimeout);
+        saveTimeout=setTimeout(saveChecked,600);
+        buildCols();
+      });
+
+      const wrap=document.createElement("div");
+      wrap.style.flex="1";
+
+      const lbl=document.createElement("span");
+      lbl.className="task-label"+(ck?" done":"");
+      let html=task.label;
+      if(task.admits) html+=` <span class="badge badge-admits">admits</span>`;
+      if(task.daily) html+=` <span class="badge badge-daily">daily</span>`;
+      lbl.innerHTML=html;
+      wrap.appendChild(lbl);
+
+      if(task.note){
+        const n=document.createElement("span");
+        n.className="task-note"+(ck?" done":"");
+        n.textContent=task.note;
+        wrap.appendChild(n);
+      }
+
+      item.appendChild(cb);
+      item.appendChild(wrap);
+      item.addEventListener("click",e=>{if(e.target!==cb){cb.checked=!cb.checked;cb.dispatchEvent(new Event("change"));}});
+      list.appendChild(item);
+    });
+    card.appendChild(list);
+    cols.appendChild(card);
+  });
+
+  document.getElementById("week-label").textContent="Week of "+getWeekDates(currentOffset);
+  document.getElementById("week-sub").textContent=getWeekKey(currentOffset)+" · Rotation "+(getRotation(currentOffset)+1)+" of 3";
+}
+
+function changeWeek(delta){currentOffset+=delta;loadChecked();buildCols();}
+loadChecked();
+buildCols();
+</script>
+</body>
+</html>
