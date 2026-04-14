@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Team Task Sheet</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f4f6f9;padding:1rem;color:#111}
+h1{font-size:18px;font-weight:600;color:#1a1a2e;margin-bottom:4px}
+.subtitle{font-size:12px;color:#888;margin-bottom:1.25rem}
+.tab-row{display:flex;gap:8px;margin-bottom:1.25rem}
+.tab-btn{padding:7px 20px;border-radius:8px;border:1px solid #ddd;background:#fff;font-size:13px;font-weight:500;cursor:pointer;color:#555}
+.tab-btn.active{background:#1a1a2e;color:#fff;border-color:#1a1a2e}
+.panel{display:none}
+.panel.active{display:block}
+.nav-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding:0.75rem 1rem;background:#fff;border:1px solid #e0e0e0;border-radius:12px}
+.nav-btn{background:transparent;border:1px solid #ccc;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px;color:#333}
+.nav-btn:hover{background:#f0f0f0}
+.week-label{font-size:14px;font-weight:600;color:#1a1a2e;text-align:center}
+.week-sub{font-size:12px;color:#777;text-align:center;margin-top:2px}
+.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.day-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+@media(max-width:700px){.cols,.day-grid{grid-template-columns:1fr}}
+.col-card{background:#fff;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden}
+.col-header{padding:12px 14px;border-bottom:1px solid #e0e0e0}
+.col-header.teal{background:#E1F5EE}
+.col-header.purple{background:#EEEDFE}
+.col-header.amber{background:#FAEEDA}
+.col-header.sat{background:#E1F5EE}
+.col-header.sun{background:#EEEDFE}
+.col-header.signout{background:#FAEEDA}
+.col-name{font-size:14px;font-weight:600}
+.teal .col-name,.sat .col-name{color:#085041}
+.purple .col-name,.sun .col-name{color:#3C3489}
+.amber .col-name,.signout .col-name{color:#633806}
+.col-sub{font-size:11px;margin-top:2px}
+.teal .col-sub,.sat .col-sub{color:#0F6E56}
+.purple .col-sub,.sun .col-sub{color:#534AB7}
+.amber .col-sub,.signout .col-sub{color:#854F0B}
+.col-count{font-size:12px;margin-top:3px}
+.teal .col-count,.sat .col-count{color:#0F6E56}
+.purple .col-count,.sun .col-count{color:#534AB7}
+.amber .col-count,.signout .col-count{color:#854F0B}
+.progress-bar{height:4px;background:#e8e8e8}
+.teal-fill,.sat-fill{height:4px;background:#1D9E75}
+.purple-fill,.sun-fill{height:4px;background:#7F77DD}
+.amber-fill{height:4px;background:#BA7517}
+.tasks-list{padding:10px 8px}
+.task-item{display:flex;align-items:flex-start;gap:8px;padding:7px 6px;border-radius:8px;cursor:pointer}
+.task-item:hover{background:#f8f8f8}
+.task-item input[type=checkbox]{margin-top:2px;flex-shrink:0;cursor:pointer;width:14px;height:14px}
+.teal-acc input{accent-color:#1D9E75}
+.purple-acc input{accent-color:#534AB7}
+.amber-acc input{accent-color:#BA7517}
+.sat-acc input{accent-color:#1D9E75}
+.sun-acc input{accent-color:#534AB7}
+.task-label{font-size:12.5px;color:#111;line-height:1.5;font-weight:500}
+.task-label.done{color:#bbb;text-decoration:line-through}
+.task-note{display:block;font-size:11px;color:#888;font-weight:400;margin-top:1px}
+.task-note.done{color:#ccc}
+.badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:99px;margin-left:5px;vertical-align:middle;white-space:nowrap;font-weight:500}
+.badge-daily{background:#FAC775;color:#633806}
+.badge-admits{background:#9FE1CB;color:#085041}
+.badge-priority{background:#F5C4B3;color:#712B13}
+.saving{font-size:11px;color:#999;text-align:center;padding:4px 0;min-height:18px}
+.signout-body{padding:12px 14px}
+.so-label{font-size:12px;font-weight:600;color:#666;margin-bottom:4px;margin-top:10px;display:block}
+.so-label:first-child{margin-top:0}
+.signout-input{width:100%;border:1px solid #ddd;border-radius:8px;padding:8px 10px;font-size:12.5px;color:#111;background:#fff;resize:vertical;font-family:inherit;outline:none}
+.signout-input:focus{border-color:#aaa}
+.signout-input.short{height:36px;resize:none}
+.signout-input.tall{min-height:64px}
+.save-btn{margin-top:12px;background:#E1F5EE;border:1px solid #5DCAA5;border-radius:8px;padding:8px 20px;cursor:pointer;font-size:13px;color:#085041;font-family:inherit;font-weight:500}
+.save-btn:hover{background:#9FE1CB}
+.divider{border:none;border-top:1px solid #eee;margin:16px 0}
+.so-preview{background:#f9f9f9;border-radius:8px;padding:10px 12px;font-size:12px;color:#333;line-height:1.8;border:1px solid #eee;white-space:pre-wrap;margin-top:8px;display:none}
+.so-preview-label{font-size:12px;font-weight:600;color:#666;margin-top:14px;margin-bottom:4px;display:block}
+</style>
+</head>
+<body>
+
+<h1>Team Task Sheet</h1>
+<p class="subtitle">Weekday rotation &bull; Weekend PIC checklist</p>
+
+<div class="tab-row">
+  <button class="tab-btn active" id="tab-weekday" onclick="switchTab('weekday')">Weekday Rotation</button>
+  <button class="tab-btn" id="tab-weekend" onclick="switchTab('weekend')">Weekend PIC</button>
+</div>
+
+<div id="saving-msg" class="saving"></div>
+
+<div id="panel-weekday" class="panel active">
+  <div class="nav-bar">
+    <button class="nav-btn" onclick="changeWeek(-1)">&#8592; Prev Week</button>
+    <div>
+      <div class="week-label" id="wd-label"></div>
+      <div class="week-sub" id="wd-sub"></div>
+    </div>
+    <button class="nav-btn" onclick="changeWeek(1)">Next Week &#8594;</button>
+  </div>
+  <div class="cols" id="wd-cols"></div>
+</div>
+
+<div id="panel-weekend" class="panel">
+  <div class="nav-bar">
+    <button class="nav-btn" onclick="changeWeekend(-1)">&#8592; Prev Weekend</button>
+    <div>
+      <div class="week-label" id="we-label"></div>
+      <div class="week-sub" id="we-sub"></div>
+    </div>
+    <button class="nav-btn" onclick="changeWeekend(1)">Next Weekend &#8594;</button>
+  </div>
+  <div class="day-grid" id="we-grid"></div>
+  <div class="col-card" id="we-signout"></div>
+</div>
+
+<script>
+function switchTab(name) {
+  document.getElementById("panel-weekday").classList.remove("active");
+  document.getElementById("panel-weekend").classList.remove("active");
+  document.getElementById("tab-weekday").classList.remove("active");
+  document.getElementById("tab-weekend").classList.remove("active");
+  document.getElementById("panel-" + name).classList.add("active");
+  document.getElementById("tab-" + name).classList.add("active");
+}
+
+function showSaved() {
+  var msg = document.getElementById("saving-msg");
+  msg.textContent = "Progress saved.";
+  setTimeout(function() { msg.textContent = ""; }, 1800);
+}
+
+function safeSave(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); showSaved(); } catch(e) {}
+}
+
+function safeLoad(key) {
+  try { var r = localStorage.getItem(key); return r ? JSON.parse(r) : null; } catch(e) { return null; }
+}
+
+var WD_PEOPLE = ["Jaden", "Dominique", "I'ketta"];
+var WD_STYLES = ["teal", "purple", "amber"];
+var WD_ACCS   = ["teal-acc", "purple-acc", "amber-acc"];
+var WD_FILLS  = ["teal-fill", "purple-fill", "amber-fill"];
+
+var WD_GROUPS = [
+  [
+    { label: "Create the Daily Hospitalist List" },
+    { label: "Send Daily Census and List Emails" },
+    { label: "Set Up ED Admissions TigerText Group" },
+    { label: "Verify Day Admissions, Bring on Service and Enter Demographics", admits: true },
+    { label: "File Previous Day's Discharges" },
+    { label: "Complete PET Calls", note: "Currently not completing PET visits - document accordingly" },
+    { label: "Generate Rounding Lists for Day and Night" },
+    { label: "Check Mail Room - Scan and Email Insurance Letters to MEDUSA" }
+  ],
+  [
+    { label: "File CQIs" },
+    { label: "Enter Missing Event Information", note: "Located under Scrubber Failure / Event Information" },
+    { label: "Complete CQIs" },
+    { label: "File Missing Face Sheets", note: "Located under Required Documents" },
+    { label: "File Clinical Pathways" },
+    { label: "Verify and Update Patient Room Numbers" },
+    { label: "File Missing Documentation", note: "Located under Document Transmission" },
+    { label: "Verify Night Admissions, Bring on Service and Enter Demographics", admits: true },
+    { label: "Complete and Send Reports Email" }
+  ],
+  [
+    { label: "Answer ED Phone Calls for Admissions" },
+    { label: "Complete Scrubbers on Smartsheet", daily: true },
+    { label: "Complete PIC Requests on Smartsheet", daily: true },
+    { label: "Enter Outside Physician Information", note: "Contact the physician's practice directly to obtain this information" },
+    { label: "Review Managed Schedules and Apply Any Necessary Updates", daily: true },
+    { label: "Confirm All Audit Documents Are Filed", note: "If a document is unavailable, contact the provider directly", daily: true },
+    { label: "Enter Missing PCPs", note: "Reference Medi-Tech or contact the patient for updated information" },
+    { label: "Bring ICU Downgrades on Service and Enter Demographics", admits: true },
+    { label: "Review and Reply to Team Emails" }
+  ]
+];
+
+var wdOffset = 0;
+var wdChecked = {};
+var wdTimer = null;
+
+function wdKey(offset) {
+  var base = new Date(2026, 3, 13);
+  var d = new Date(base.getTime() + offset * 7 * 86400000);
+  var jan1 = new Date(d.getFullYear(), 0, 1);
+  var wk = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+  return d.getFullYear() + "-W" + (wk < 10 ? "0" : "") + wk;
+}
+
+function wdDates(offset) {
+  var base = new Date(2026, 3, 13);
+  var mon = new Date(base.getTime() + offset * 7 * 86400000);
+  var sun = new Date(mon.getTime() + 6 * 86400000);
+  var fmt = function(d) { return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }); };
+  return fmt(mon) + " - " + fmt(sun);
+}
+
+function wdRotation(offset) { return ((offset % 3) + 3) % 3; }
+
+function wdLoad() {
+  var data = safeLoad("wd_" + wdKey(wdOffset));
+  wdChecked = data || {};
+}
+
+function wdSave() { safeSave("wd_" + wdKey(wdOffset), wdChecked); }
+
+function buildWeekday() {
+  var rot = wdRotation(wdOffset);
+  var cols = document.getElementById("wd-cols");
+  cols.innerHTML = "";
+  for (var pi = 0; pi < WD_PEOPLE.length; pi++) {
+    (function(pi) {
+      var gi = (pi - rot + 3) % 3;
+      var tasks = WD_GROUPS[gi];
+      var done = 0;
+      for (var i = 0; i < tasks.length; i++) { if (wdChecked[pi + "-" + i]) done++; }
+      var card = document.createElement("div"); card.className = "col-card";
+      var hdr = document.createElement("div"); hdr.className = "col-header " + WD_STYLES[pi];
+      hdr.innerHTML = "<div class='col-name'>" + WD_PEOPLE[pi] + "</div><div class='col-count'>" + done + " / " + tasks.length + " completed</div>";
+      card.appendChild(hdr);
+      var bar = document.createElement("div"); bar.className = "progress-bar";
+      var fill = document.createElement("div"); fill.className = WD_FILLS[pi];
+      fill.style.width = Math.round(done / tasks.length * 100) + "%";
+      bar.appendChild(fill); card.appendChild(bar);
+      var list = document.createElement("div"); list.className = "tasks-list";
+      for (var ti = 0; ti < tasks.length; ti++) {
+        (function(ti) {
+          var task = tasks[ti];
+          var ck = !!wdChecked[pi + "-" + ti];
+          var item = document.createElement("div"); item.className = "task-item " + WD_ACCS[pi];
+          var cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = ck;
+          cb.addEventListener("change", function(e) {
+            wdChecked[pi + "-" + ti] = e.target.checked;
+            clearTimeout(wdTimer); wdTimer = setTimeout(wdSave, 600); buildWeekday();
+          });
+          var wrap = document.createElement("div"); wrap.style.flex = "1";
+          var lbl = document.createElement("span"); lbl.className = "task-label" + (ck ? " done" : "");
+          var html = task.label;
+          if (task.admits) html += " <span class='badge badge-admits'>admits</span>";
+          if (task.daily)  html += " <span class='badge badge-daily'>daily</span>";
+          lbl.innerHTML = html; wrap.appendChild(lbl);
+          if (task.note) {
+            var n = document.createElement("span"); n.className = "task-note" + (ck ? " done" : "");
+            n.textContent = task.note; wrap.appendChild(n);
+          }
+          item.appendChild(cb); item.appendChild(wrap);
+          item.addEventListener("click", function(e) { if (e.target !== cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event("change")); } });
+          list.appendChild(item);
+        })(ti);
+      }
+      card.appendChild(list); cols.appendChild(card);
+    })(pi);
+  }
+  document.getElementById("wd-label").textContent = "Week of " + wdDates(wdOffset);
+  document.getElementById("wd-sub").textContent = wdKey(wdOffset) + "  |  Rotation " + (wdRotation(wdOffset) + 1) + " of 3";
+}
+
+function changeWeek(delta) { wdOffset += delta; wdLoad(); buildWeekday(); }
+
+var WE_TASKS = [
+  { label: "Create the Hospitalist List", priority: true },
+  { label: "Create the ED Admissions TigerText Group", priority: true },
+  { label: "Distribute Census and Patient List Emails", priority: true },
+  { label: "Fax the Hospitalist List" },
+  { label: "Verify Day Admissions" },
+  { label: "Verify Night Admissions" },
+  { label: "Verify Patient Room Numbers" },
+  { label: "Create Rounding Lists for Day and Night" },
+  { label: "Bring ICU Downgrades on Service and Enter Demographics" },
+  { label: "Enter Patient Demographics" },
+  { label: "Retrieve and File Discharge Documents" },
+  { label: "Retrieve and File H&P Documents" },
+  { label: "Review Audits and File All Requested Documentation", note: "If documentation is unavailable, note in the sign-out below" }
+];
+
+var WE_DAYS = ["Saturday", "Sunday"];
+var WE_STYLES = ["sat", "sun"];
+var WE_FILLS = ["sat-fill", "sun-fill"];
+var WE_ACCS = ["sat-acc", "sun-acc"];
+
+var weOffset = 0;
+var weChecked = {};
+var weSignout = { sat: "", sun: "", pic_sat: "", pic_sun: "" };
+var weTimer = null;
+
+function weKey(offset) {
+  var base = new Date(2026, 3, 18);
+  var d = new Date(base.getTime() + offset * 7 * 86400000);
+  var jan1 = new Date(d.getFullYear(), 0, 1);
+  var wk = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+  return d.getFullYear() + "-W" + (wk < 10 ? "0" : "") + wk;
+}
+
+function weDates(offset) {
+  var base = new Date(2026, 3, 18);
+  var sat = new Date(base.getTime() + offset * 7 * 86400000);
+  var sun = new Date(sat.getTime() + 86400000);
+  var fmt = function(d) { return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }); };
+  return [fmt(sat), fmt(sun)];
+}
+
+function weLoad() {
+  weChecked = safeLoad("we_ck_" + weKey(weOffset)) || {};
+  weSignout = safeLoad("we_so_" + weKey(weOffset)) || { sat: "", sun: "", pic_sat: "", pic_sun: "" };
+}
+
+function weSaveChecked() { safeSave("we_ck_" + weKey(weOffset), weChecked); }
+
+function weSaveSignout() {
+  var fields = ["pic_sat", "pic_sun", "sat", "sun"];
+  var ids    = ["pic_sat", "pic_sun", "so_sat", "so_sun"];
+  var keys   = ["pic_sat", "pic_sun", "sat", "sun"];
+  for (var i = 0; i < ids.length; i++) {
+    var el = document.getElementById(ids[i]);
+    if (el) weSignout[keys[i]] = el.value;
+  }
+  safeSave("we_so_" + weKey(weOffset), weSignout);
+  updatePreview();
+}
+
+function updatePreview() {
+  var prev = document.getElementById("so-preview");
+  if (!prev) return;
+  var dates = weDates(weOffset);
+  var lines = [];
+  var days = ["sat", "sun"];
+  for (var i = 0; i < days.length; i++) {
+    var d = days[i];
+    var name = weSignout["pic_" + d] || "";
+    var notes = weSignout[d] || "";
+    if (name || notes) {
+      lines.push(WE_DAYS[i] + ", " + dates[i]);
+      lines.push("PIC: " + (name || "Not specified"));
+      lines.push(notes ? "Tasks Not Completed:\n" + notes : "All tasks completed.");
+      if (i === 0) lines.push("");
+    }
+  }
+  if (lines.length) { prev.style.display = "block"; prev.textContent = lines.join("\n"); }
+  else { prev.style.display = "none"; }
+}
+
+function buildWeekendDayCard(di) {
+  var dates = weDates(weOffset);
+  var done = 0;
+  for (var i = 0; i < WE_TASKS.length; i++) { if (weChecked[di + "-" + i]) done++; }
+  var card = document.createElement("div"); card.className = "col-card";
+  var hdr = document.createElement("div"); hdr.className = "col-header " + WE_STYLES[di];
+  hdr.innerHTML = "<div class='col-name'>" + WE_DAYS[di] + "</div><div class='col-sub'>" + dates[di] + "</div><div class='col-count'>" + done + " / " + WE_TASKS.length + " completed</div>";
+  card.appendChild(hdr);
+  var bar = document.createElement("div"); bar.className = "progress-bar";
+  var fill = document.createElement("div"); fill.className = WE_FILLS[di];
+  fill.style.width = Math.round(done / WE_TASKS.length * 100) + "%";
+  bar.appendChild(fill); card.appendChild(bar);
+  var list = document.createElement("div"); list.className = "tasks-list";
+  for (var ti = 0; ti < WE_TASKS.length; ti++) {
+    (function(di, ti) {
+      var task = WE_TASKS[ti];
+      var ck = !!weChecked[di + "-" + ti];
+      var item = document.createElement("div"); item.className = "task-item " + WE_ACCS[di];
+      var cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = ck;
+      cb.addEventListener("change", function(e) {
+        weChecked[di + "-" + ti] = e.target.checked;
+        clearTimeout(weTimer); weTimer = setTimeout(weSaveChecked, 600); buildWeekend();
+      });
+      var wrap = document.createElement("div"); wrap.style.flex = "1";
+      var lbl = document.createElement("span"); lbl.className = "task-label" + (ck ? " done" : "");
+      var html = task.label;
+      if (task.priority) html += " <span class='badge badge-priority'>priority</span>";
+      lbl.innerHTML = html; wrap.appendChild(lbl);
+      if (task.note) {
+        var n = document.createElement("span"); n.className = "task-note" + (ck ? " done" : "");
+        n.textContent = task.note; wrap.appendChild(n);
+      }
+      item.appendChild(cb); item.appendChild(wrap);
+      item.addEventListener("click", function(e) { if (e.target !== cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event("change")); } });
+      list.appendChild(item);
+    })(di, ti);
+  }
+  card.appendChild(list);
+  return card;
+}
+
+function buildSignout() {
+  var dates = weDates(weOffset);
+  var card = document.getElementById("we-signout");
+  card.innerHTML = "";
+  var hdr = document.createElement("div"); hdr.className = "col-header signout";
+  hdr.innerHTML = "<div class='col-name'>Weekend Sign-Out</div><div class='col-sub'>Complete before the end of your shift - note any tasks not finished for the incoming PIC</div>";
+  card.appendChild(hdr);
+  var body = document.createElement("div"); body.className = "signout-body";
+  var dayKeys = ["sat", "sun"];
+  for (var di = 0; di < dayKeys.length; di++) {
+    (function(di) {
+      var d = dayKeys[di];
+      if (di === 1) { var hr = document.createElement("hr"); hr.className = "divider"; body.appendChild(hr); }
+      var l1 = document.createElement("span"); l1.className = "so-label"; l1.textContent = WE_DAYS[di] + " - " + dates[di]; body.appendChild(l1);
+      var l2 = document.createElement("span"); l2.className = "so-label"; l2.textContent = "PIC Name"; body.appendChild(l2);
+      var pi = document.createElement("input"); pi.type = "text"; pi.id = "pic_" + d;
+      pi.className = "signout-input short"; pi.placeholder = "Enter your full name"; pi.value = weSignout["pic_" + d] || "";
+      body.appendChild(pi);
+      var l3 = document.createElement("span"); l3.className = "so-label"; l3.textContent = "Tasks Not Completed"; body.appendChild(l3);
+      var ta = document.createElement("textarea"); ta.id = "so_" + d; ta.className = "signout-input tall";
+      ta.placeholder = "List any tasks that were not completed and include any notes for the incoming PIC. Leave blank if all tasks were completed.";
+      ta.value = weSignout[d] || ""; body.appendChild(ta);
+    })(di);
+  }
+  var btn = document.createElement("button"); btn.className = "save-btn"; btn.textContent = "Save Sign-Out"; btn.onclick = weSaveSignout; body.appendChild(btn);
+  var pl = document.createElement("span"); pl.className = "so-preview-label"; pl.textContent = "Sign-out summary"; body.appendChild(pl);
+  var prev = document.createElement("div"); prev.className = "so-preview"; prev.id = "so-preview"; body.appendChild(prev);
+  card.appendChild(body);
+  updatePreview();
+}
+
+function buildWeekend() {
+  var grid = document.getElementById("we-grid");
+  grid.innerHTML = "";
+  for (var di = 0; di < 2; di++) { grid.appendChild(buildWeekendDayCard(di)); }
+  buildSignout();
+  var dates = weDates(weOffset);
+  document.getElementById("we-label").textContent = "Weekend of " + dates[0].split(",")[0] + " - " + dates[1].split(",")[0];
+  document.getElementById("we-sub").textContent = weKey(weOffset);
+}
+
+function changeWeekend(delta) { weOffset += delta; weLoad(); buildWeekend(); }
+
+wdLoad(); buildWeekday();
+weLoad(); buildWeekend();
+</script>
+</body>
+</html>
